@@ -7,12 +7,12 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 db = SQLAlchemy(app)
-#ahoj
+
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, unique=True, nullable=False)
-    title = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer)
+    title = db.Column(db.String(50))
     body = db.Column(db.String(300))
 
     def __repr__(self):
@@ -27,8 +27,8 @@ def index():
 @app.route('/posts')
 def get_posts():
     posts = Post.query.all()
-
     output = []
+
     for post in posts:
         post_data = {'id': post.id, 'user_id': post.user_id, 'title': post.title, 'body': post.body}
 
@@ -37,10 +37,19 @@ def get_posts():
     return {"posts": output}
 
 
-@app.route('/posts/<id>', methods=['GET'])
-def get_post(id):
-    post = Post.query.get_or_404(id)
-    return {'id': post.id, 'user_id': post.user_id, 'title': post.title, 'body': post.body}
+@app.route('/posts/<search>/<id>', methods=['GET'])
+def get_post_or_posts(search, id):
+    data = []
+    if search == 'user':
+        posts = 'a'
+        data.append(posts)
+        return {"daco": data}
+
+    elif search == 'post':
+        posts = Post.query.get(id)
+        if posts is None:
+            return {'massage': "Hello"}
+        return {'id': posts.id, 'user_id': posts.user_id, 'title': posts.title, 'body': posts.body}
 
 
 @app.route('/posts', methods=['POST'])
