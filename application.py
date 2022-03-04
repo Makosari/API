@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 import requests
+from flask_swagger_ui import get_swaggerui_blueprint
 
 app = Flask(__name__)
 
@@ -41,24 +42,27 @@ def get_posts():
 def get_post_or_posts(search, id):
     data = []
     if search == 'user':
-        posts = 'a'
-        data.append(posts)
+        post = Post.query.get()
         return {"daco": data}
 
     elif search == 'post':
-        posts = Post.query.get(id)
-        if posts is None:
-            return {'massage': "Hello"}
-        return {'id': posts.id, 'user_id': posts.user_id, 'title': posts.title, 'body': posts.body}
+        post = Post.query.get(id)
+        if post is None:
+            response = requests.get('https://jsonplaceholder.typicode.com/posts').json()
+            postid = [_['id'] for _ in response]
+            if int(id) in postid:
+                return {'massage': "Post was found and added."}
+            else:
+                return {'massage': "Post does not exist here."}
+        else:
+            return {'id': post.id, 'user_id': post.user_id, 'title': post.title, 'body': post.body}
 
 
 @app.route('/posts', methods=['POST'])
 def add_post():
     response = requests.get('https://jsonplaceholder.typicode.com/users').json()
     userids = [_['id'] for _ in response]
-
     post = Post(user_id=request.json['user_id'], title=request.json['title'], body=request.json['body'])
-
     if post.user_id in userids:
         db.session.add(post)
         db.session.commit()
@@ -73,10 +77,10 @@ def update_post(id):
     if post is None:
         return {"error": "not found"}
     else:
-        post_to_update = Post(id =request.json['id'], title=request.json['title'], body=request.json['body'])
-        db.session.put(post_to_update)
+        updated = Post(title=request.json['title'], body=request.json['body'])
+        db.session.add(updated)
         db.session.commit()
-        return {'massage': "post was added"}
+        return {'massage': "post was updated"}
 
 
 @app.route('/posts/<id>', methods=['DELETE'])
@@ -87,3 +91,7 @@ def delete_post(id):
     db.session.delete(post)
     db.session.commit()
     return {'massage': "post was deleted"}
+
+
+if __name__ == "__main__":
+    app.run()
